@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "eye-cursor"
 version = "0.1.0"
-description = "MacOS hand-finger mouse control using MediaPipe + Quartz"
+description = "MacOS hand-eye fused mouse control using MediaPipe + Quartz"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 license = { text = "MIT" }

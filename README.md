@@ -1,11 +1,12 @@
-# Hand Cursor (macOS Apple Silicon)
+# Cursor Fusion (macOS Apple Silicon)
 
-Control your mouse pointer with one finger using webcam hand tracking.
+Control your mouse pointer using fused hand + eye tracking.
 
 This implementation includes:
 - Real-time hand tracking with MediaPipe Hand Landmarker
-- Index fingertip cursor control
-- 9-point calibration for accurate screen mapping
+- Real-time eye tracking with MediaPipe Face Landmarker (iris features)
+- Joint calibration for hand and eye models
+- Weighted hand+eye fusion for smoother startup and better precision
 - Native macOS cursor movement through Quartz APIs
 - Exponential smoothing and deadzone filtering for stability
 
@@ -38,13 +39,14 @@ or
 hand-cursor
 ```
 
-On first run, the app auto-downloads `hand_landmarker.task` to:
+On first run, the app auto-downloads models to:
 - `~/.cache/eye-cursor/hand_landmarker.task`
+- `~/.cache/eye-cursor/face_landmarker.task`
 
-If your network is restricted, pass a local model file:
+If your network is restricted, pass local model files:
 
 ```bash
-eye-cursor --model-path /path/to/hand_landmarker.task
+eye-cursor --model-path /path/to/hand_landmarker.task --eye-model-path /path/to/face_landmarker.task
 ```
 
 ## Controls
@@ -57,9 +59,16 @@ eye-cursor --model-path /path/to/hand_landmarker.task
 
 Calibration starts automatically at launch. Complete all target points for cursor control.
 
+## Optional Tuning
+
+- `--eye-fusion-weight 0.25` controls eye influence when both trackers are available.
+  - `0.0` = hand only
+  - `1.0` = eye only
+  - default `0.25` = hand-led with eye assist
+
 ## Calibration Flow
 
-1. Keep your index fingertip on each red target dot.
+1. Keep your face visible and point your index fingertip at each red target dot.
 2. Press `space` to capture that point.
 3. Repeat until all calibration points are captured.
 4. Cursor control becomes live after calibration completes.

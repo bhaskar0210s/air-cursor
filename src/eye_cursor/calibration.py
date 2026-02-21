@@ -80,6 +80,19 @@ class Calibrator:
         if len(self._samples) > max_samples:
             self._samples = self._samples[-max_samples:]
 
+    def sample_count(self) -> int:
+        return len(self._samples)
+
+    def samples_needed(self) -> int:
+        return max(0, self.samples_required - len(self._samples))
+
+    def can_capture(self) -> bool:
+        if not self.active:
+            return False
+        if self.current_target() is None:
+            return False
+        return len(self._samples) >= self.samples_required
+
     def capture_current_point(self) -> tuple[bool, str]:
         if not self.active:
             return False, "calibration is not active"
