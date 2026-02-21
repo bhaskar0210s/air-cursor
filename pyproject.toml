@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eye-cursor"
+version = "0.1.0"
+description = "MacOS hand-finger mouse control using MediaPipe + Quartz"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "MIT" }
+authors = [
+  { name = "Bhaskars" }
+]
+dependencies = [
+  "mediapipe>=0.10.32",
+  "opencv-python>=4.13.0.92",
+  "numpy>=2.2.0",
+  "pyobjc-framework-Quartz>=12.1"
+]
+
+[project.scripts]
+eye-cursor = "eye_cursor.app:main"
+hand-cursor = "eye_cursor.app:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
