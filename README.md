@@ -5,6 +5,7 @@ Control your mouse pointer with one finger using webcam hand tracking.
 This implementation includes:
 - Real-time hand tracking with MediaPipe Hand Landmarker
 - Index fingertip cursor control
+- 9-point calibration for accurate screen mapping
 - Native macOS cursor movement through Quartz APIs
 - Exponential smoothing and deadzone filtering for stability
 
@@ -48,8 +49,20 @@ eye-cursor --model-path /path/to/hand_landmarker.task
 
 ## Controls
 
+- `c`: start/restart calibration
+- `space`: capture current calibration point
+- `h`: toggle handedness label swap
 - `p`: pause/resume cursor control
 - `q`: quit
+
+Calibration starts automatically at launch. Complete all target points for cursor control.
+
+## Calibration Flow
+
+1. Keep your index fingertip on each red target dot.
+2. Press `space` to capture that point.
+3. Repeat until all calibration points are captured.
+4. Cursor control becomes live after calibration completes.
 
 ## macOS Permissions
 

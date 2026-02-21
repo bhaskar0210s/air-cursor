@@ -130,7 +130,7 @@ class Calibrator:
         cv2.putText(self._canvas, status, (40, 60), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (230, 230, 230), 2)
         cv2.putText(
             self._canvas,
-            "Look at red dot and press SPACE to capture. Press q to quit.",
+            "Point index fingertip at red dot, then press SPACE. Press q to quit.",
             (40, 110),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.8,

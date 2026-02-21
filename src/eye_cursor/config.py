@@ -9,7 +9,11 @@ class AppConfig:
     smooth_alpha: float = 0.25
     move_deadzone_px: float = 1.5
 
-    hand_input_padding: float = 0.08
     fingertip_landmark_index: int = 8
+    preview_mirror: bool = True
+    swap_handedness_labels: bool = True
+
+    calibration_grid_size: int = 3
+    calibration_samples_required: int = 20
 
     model_path: str | None = None
