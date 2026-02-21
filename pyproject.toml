@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "eye-cursor"
 version = "0.1.0"
-description = "MacOS hand-eye fused mouse control using MediaPipe + Quartz"
+description = "MacOS fingertip mouse control using Apple Vision + Quartz"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 license = { text = "MIT" }
@@ -13,10 +13,10 @@ authors = [
   { name = "Bhaskars" }
 ]
 dependencies = [
-  "mediapipe>=0.10.32",
   "opencv-python>=4.13.0.92",
   "numpy>=2.2.0",
-  "pyobjc-framework-Quartz>=12.1"
+  "pyobjc-framework-Quartz>=12.1",
+  "pyobjc-framework-Vision>=12.1"
 ]
 
 [project.scripts]

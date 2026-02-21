@@ -1,12 +1,11 @@
-# Cursor Fusion (macOS Apple Silicon)
+# Hand Cursor (macOS Apple Silicon)
 
-Control your mouse pointer using fused hand + eye tracking.
+Control your mouse pointer using index-fingertip hand tracking.
 
 This implementation includes:
-- Real-time hand tracking with MediaPipe Hand Landmarker
-- Real-time eye tracking with MediaPipe Face Landmarker (iris features)
-- Joint calibration for hand and eye models
-- Weighted hand+eye fusion for smoother startup and better precision
+- Apple Vision Framework hand-pose tracking (`VNDetectHumanHandPoseRequest`)
+- Direct fingertip-to-cursor mapping (no calibration)
+- Adjustable cursor sensitivity
 - Native macOS cursor movement through Quartz APIs
 - Exponential smoothing and deadzone filtering for stability
 
@@ -39,39 +38,21 @@ or
 hand-cursor
 ```
 
-On first run, the app auto-downloads models to:
-- `~/.cache/eye-cursor/hand_landmarker.task`
-- `~/.cache/eye-cursor/face_landmarker.task`
+## Sensitivity
 
-If your network is restricted, pass local model files:
+- CLI: `--sensitivity 1.2`
+- Runtime keys:
+  - `+` / `]` increase
+  - `-` / `[` decrease
 
-```bash
-eye-cursor --model-path /path/to/hand_landmarker.task --eye-model-path /path/to/face_landmarker.task
-```
+Sensitivity changes how strongly fingertip movement maps to screen movement.
 
 ## Controls
 
-- `c`: start/restart calibration
-- `space`: capture current calibration point
+- `+`, `-`, `[`, `]`: adjust sensitivity
 - `h`: toggle handedness label swap
 - `p`: pause/resume cursor control
 - `q`: quit
-
-Calibration starts automatically at launch. Complete all target points for cursor control.
-
-## Optional Tuning
-
-- `--eye-fusion-weight 0.25` controls eye influence when both trackers are available.
-  - `0.0` = hand only
-  - `1.0` = eye only
-  - default `0.25` = hand-led with eye assist
-
-## Calibration Flow
-
-1. Keep your face visible and point your index fingertip at each red target dot.
-2. Press `space` to capture that point.
-3. Repeat until all calibration points are captured.
-4. Cursor control becomes live after calibration completes.
 
 ## macOS Permissions
 

@@ -12,10 +12,7 @@ class AppConfig:
     fingertip_landmark_index: int = 8
     preview_mirror: bool = True
     swap_handedness_labels: bool = True
-    eye_fusion_weight: float = 0.25
-
-    calibration_grid_size: int = 3
-    calibration_samples_required: int = 20
-
-    model_path: str | None = None
-    eye_model_path: str | None = None
+    cursor_sensitivity: float = 1.2
+    min_sensitivity: float = 0.4
+    max_sensitivity: float = 3.0
+    sensitivity_step: float = 0.1
