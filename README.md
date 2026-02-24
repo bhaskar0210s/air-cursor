@@ -3,6 +3,7 @@
 Control your mouse pointer using index-fingertip hand tracking.
 
 This implementation includes:
+
 - Apple Vision Framework hand-pose tracking (`VNDetectHumanHandPoseRequest`)
 - Direct fingertip-to-cursor mapping (no calibration)
 - Adjustable cursor sensitivity
@@ -35,7 +36,7 @@ eye-cursor
 or
 
 ```bash
-hand-cursor
+air-cursor
 ```
 
 ## Sensitivity

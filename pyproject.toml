@@ -20,8 +20,7 @@ dependencies = [
 ]
 
 [project.scripts]
-eye-cursor = "eye_cursor.app:main"
-hand-cursor = "eye_cursor.app:main"
+air-cursor = "air_cursor.app:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
