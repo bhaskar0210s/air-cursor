@@ -20,3 +20,8 @@ class EyeCursorConfig:
     gaze_deadband_norm: float = 0.0006
     curve_gamma: float = 1.3
     uncalibrated_gain: float = 2.6
+
+    eye_zoom: float = 10.0
+    min_eye_zoom: float = 1.0
+    max_eye_zoom: float = 10.0
+    eye_zoom_step: float = 0.5

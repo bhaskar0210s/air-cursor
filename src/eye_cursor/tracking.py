@@ -19,14 +19,22 @@ class TrackingResult:
 
 
 class EyeTracker:
-    def __init__(self, min_confidence: float = 0.2) -> None:
+    def __init__(self, min_confidence: float = 0.2, eye_zoom: float = 10.0) -> None:
         self._request = Vision.VNDetectFaceLandmarksRequest.alloc().init()
         self._min_confidence = float(np.clip(min_confidence, 0.0, 1.0))
         self._color_space = Quartz.CGColorSpaceCreateDeviceRGB()
+        self._eye_zoom = float(np.clip(eye_zoom, 1.0, 10.0))
         self.last_status = "Need both eyes visible"
 
     def close(self) -> None:
         return
+
+    @property
+    def eye_zoom(self) -> float:
+        return self._eye_zoom
+
+    def set_eye_zoom(self, value: float) -> None:
+        self._eye_zoom = float(np.clip(value, 1.0, 10.0))
 
     @staticmethod
     def _to_cgimage(frame_bgr: np.ndarray, color_space) -> Quartz.CGImageRef | None:
@@ -201,6 +209,7 @@ class EyeTracker:
     def _detect_pupil_center(
         frame_gray: np.ndarray,
         eye_points_frame: list[tuple[float, float]],
+        eye_zoom: float,
     ) -> tuple[float, float] | None:
         if len(eye_points_frame) < 3:
             return None
@@ -226,6 +235,11 @@ class EyeTracker:
         valid_pixel_count = int(np.count_nonzero(mask))
         if valid_pixel_count < 20:
             return None
+
+        eye_zoom = float(np.clip(eye_zoom, 1.0, 10.0))
+        if eye_zoom > 1.0:
+            roi = cv2.resize(roi, None, fx=eye_zoom, fy=eye_zoom, interpolation=cv2.INTER_CUBIC)
+            mask = cv2.resize(mask, None, fx=eye_zoom, fy=eye_zoom, interpolation=cv2.INTER_NEAREST)
 
         blurred = cv2.GaussianBlur(roi, (5, 5), 0)
         masked_values = blurred[mask > 0]
@@ -267,6 +281,10 @@ class EyeTracker:
             selected = np.argpartition(masked_intensity, fallback_count - 1)[:fallback_count]
             local_x = float(xs[selected].mean())
             local_y = float(ys[selected].mean())
+
+        if eye_zoom > 1.0:
+            local_x /= eye_zoom
+            local_y /= eye_zoom
 
         return (
             float(np.clip(min_x + local_x, 0.0, frame_w - 1)),
@@ -318,8 +336,8 @@ class EyeTracker:
             return None
 
         frame_gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
-        left_pupil_frame = self._detect_pupil_center(frame_gray, left_eye_frame_points)
-        right_pupil_frame = self._detect_pupil_center(frame_gray, right_eye_frame_points)
+        left_pupil_frame = self._detect_pupil_center(frame_gray, left_eye_frame_points, self._eye_zoom)
+        right_pupil_frame = self._detect_pupil_center(frame_gray, right_eye_frame_points, self._eye_zoom)
 
         if left_pupil_frame is None:
             left_pupil_face_points = self._region_points(self._landmark_region(landmarks, "leftPupil"))

@@ -72,6 +72,12 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         help="Gain used before calibration to make movement responsive",
     )
     parser.add_argument(
+        "--eye-zoom",
+        type=float,
+        default=default_config.eye_zoom,
+        help="Eye ROI zoom used for pupil detection (1.0 to 10.0)",
+    )
+    parser.add_argument(
         "--no-preview-mirror",
         action="store_true",
         help="Disable mirrored preview/cursor mapping",
@@ -88,6 +94,82 @@ def _open_camera(camera_index: int, frame_width: int, frame_height: int) -> cv2.
     return capture
 
 
+def _extract_eye_patch(
+    frame: np.ndarray,
+    center_norm: tuple[float, float],
+    radius_px: int,
+) -> np.ndarray | None:
+    frame_h, frame_w = frame.shape[:2]
+    if frame_h <= 2 or frame_w <= 2:
+        return None
+
+    cx = int(np.clip(center_norm[0] * frame_w, 0, frame_w - 1))
+    cy = int(np.clip(center_norm[1] * frame_h, 0, frame_h - 1))
+    radius_px = int(max(8, radius_px))
+
+    x0 = max(cx - radius_px, 0)
+    x1 = min(cx + radius_px, frame_w - 1)
+    y0 = max(cy - radius_px, 0)
+    y1 = min(cy + radius_px, frame_h - 1)
+    if x0 >= x1 or y0 >= y1:
+        return None
+
+    patch = frame[y0 : y1 + 1, x0 : x1 + 1]
+    if patch.size == 0:
+        return None
+    return patch
+
+
+def _draw_eye_zoom_insets(
+    frame: np.ndarray,
+    left_norm: tuple[float, float] | None,
+    right_norm: tuple[float, float] | None,
+) -> None:
+    if left_norm is None or right_norm is None:
+        return
+
+    frame_h, frame_w = frame.shape[:2]
+    patch_size = int(np.clip(min(frame_w, frame_h) * 0.22, 110, 220))
+    radius_px = int(np.clip(min(frame_w, frame_h) * 0.07, 18, 60))
+    margin = 12
+
+    left_patch = _extract_eye_patch(frame, left_norm, radius_px)
+    right_patch = _extract_eye_patch(frame, right_norm, radius_px)
+    if left_patch is None or right_patch is None:
+        return
+
+    left_patch = cv2.resize(left_patch, (patch_size, patch_size), interpolation=cv2.INTER_CUBIC)
+    right_patch = cv2.resize(right_patch, (patch_size, patch_size), interpolation=cv2.INTER_CUBIC)
+
+    total_width = (patch_size * 2) + margin
+    if total_width + margin > frame_w or patch_size + margin > frame_h:
+        return
+
+    x0 = frame_w - total_width - margin
+    y0 = margin
+
+    frame[y0 : y0 + patch_size, x0 : x0 + patch_size] = left_patch
+    frame[y0 : y0 + patch_size, x0 + patch_size + margin : x0 + (patch_size * 2) + margin] = right_patch
+    cv2.rectangle(frame, (x0, y0), (x0 + patch_size, y0 + patch_size), (0, 255, 0), 2)
+    cv2.rectangle(
+        frame,
+        (x0 + patch_size + margin, y0),
+        (x0 + (patch_size * 2) + margin, y0 + patch_size),
+        (255, 200, 0),
+        2,
+    )
+    cv2.putText(frame, "L", (x0 + 6, y0 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+    cv2.putText(
+        frame,
+        "R",
+        (x0 + patch_size + margin + 6, y0 + 20),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.6,
+        (255, 200, 0),
+        2,
+    )
+
+
 def _draw_debug(
     frame: np.ndarray,
     tracking: TrackingResult | None,
@@ -102,6 +184,7 @@ def _draw_debug(
     smooth_alpha: float,
     curve_gamma: float,
     gaze_deadband_norm: float,
+    eye_zoom: float,
     calibration: CalibrationSession,
 ) -> np.ndarray:
     out = frame.copy()
@@ -121,6 +204,7 @@ def _draw_debug(
             right_y = int(np.clip(display_right_norm[1] * frame_h, 0, frame_h - 1))
             cv2.circle(out, (right_x, right_y), 6, (255, 200, 0), 2)
         eyes_text = f"Eyes: ({tracking.x_norm:.3f}, {tracking.y_norm:.3f})"
+        _draw_eye_zoom_insets(out, display_left_norm, display_right_norm)
 
     if mapped_point is not None:
         sx, sy = mapped_point
@@ -140,10 +224,10 @@ def _draw_debug(
     cv2.putText(out, eyes_text, (12, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (230, 230, 230), 2)
     cv2.putText(out, f"Mode: {mode} | Sensitivity: {sensitivity:.2f}", (12, 56), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (230, 230, 230), 2)
     cv2.putText(out, f"Smooth alpha: {smooth_alpha:.2f} | Gamma: {curve_gamma:.2f}", (12, 82), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (230, 230, 230), 2)
-    cv2.putText(out, f"Gaze deadband: {gaze_deadband_norm:.4f}", (12, 108), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (230, 230, 230), 2)
+    cv2.putText(out, f"Gaze deadband: {gaze_deadband_norm:.4f} | Eye zoom: {eye_zoom:.1f}x", (12, 108), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (230, 230, 230), 2)
     cv2.putText(out, calibration_text, (12, 134), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (240, 220, 160), 2)
     cv2.putText(out, status, (12, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (180, 255, 180), 2)
-    cv2.putText(out, "Keys: +/- sensitivity | ,/. smoothing | c calibrate | r reset | p pause | q quit", (12, 186), cv2.FONT_HERSHEY_SIMPLEX, 0.54, (220, 220, 220), 2)
+    cv2.putText(out, "Keys: +/- sensitivity | ,/. smoothing | z/x eye zoom | c calibrate | r reset | p pause | q quit", (12, 186), cv2.FONT_HERSHEY_SIMPLEX, 0.54, (220, 220, 220), 2)
     return out
 
 
@@ -154,7 +238,8 @@ def run(config: EyeCursorConfig) -> int:
     calibration = CalibrationSession()
 
     try:
-        tracker = EyeTracker(min_confidence=config.min_confidence)
+        tracker = EyeTracker(min_confidence=config.min_confidence, eye_zoom=config.eye_zoom)
+        tracker.set_eye_zoom(float(np.clip(config.eye_zoom, config.min_eye_zoom, config.max_eye_zoom)))
     except Exception as exc:
         print(f"Failed to initialize eye tracker: {exc}")
         return 1
@@ -261,6 +346,7 @@ def run(config: EyeCursorConfig) -> int:
                 smooth_alpha=smooth_alpha,
                 curve_gamma=curve_gamma,
                 gaze_deadband_norm=gaze_deadband_norm,
+                eye_zoom=tracker.eye_zoom,
                 calibration=calibration,
             )
             cv2.imshow(DEBUG_WINDOW, debug)
@@ -283,6 +369,12 @@ def run(config: EyeCursorConfig) -> int:
             if key in (ord("."), ord(">")):
                 smooth_alpha = float(np.clip(smooth_alpha + 0.02, 0.05, 0.95))
                 status = f"Smooth alpha: {smooth_alpha:.2f}"
+            if key in (ord("z"), ord("Z")):
+                tracker.set_eye_zoom(float(np.clip(tracker.eye_zoom + config.eye_zoom_step, config.min_eye_zoom, config.max_eye_zoom)))
+                status = f"Eye zoom: {tracker.eye_zoom:.1f}x"
+            if key in (ord("x"), ord("X")):
+                tracker.set_eye_zoom(float(np.clip(tracker.eye_zoom - config.eye_zoom_step, config.min_eye_zoom, config.max_eye_zoom)))
+                status = f"Eye zoom: {tracker.eye_zoom:.1f}x"
             if key in (ord("c"), ord("C")):
                 status = calibration.start()
             if key in (ord("r"), ord("R")):
@@ -312,6 +404,7 @@ def main() -> None:
         gaze_deadband_norm=args.gaze_deadband,
         curve_gamma=args.curve_gamma,
         uncalibrated_gain=args.uncalibrated_gain,
+        eye_zoom=args.eye_zoom,
     )
     raise SystemExit(run(config))
 
