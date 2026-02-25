@@ -214,6 +214,14 @@ def _draw_debug(
         cv2.circle(out, (preview_x, preview_y), 10, (0, 255, 255), 2)
 
     if calibration.is_active:
+        target = calibration.current_target()
+        if target is not None:
+            target_x = int(np.clip(target[0] * frame_w, 0, frame_w - 1))
+            target_y = int(np.clip(target[1] * frame_h, 0, frame_h - 1))
+            cv2.circle(out, (target_x, target_y), 12, (0, 0, 255), -1)
+            cv2.circle(out, (target_x, target_y), 18, (0, 0, 255), 2)
+
+    if calibration.is_active:
         calibration_text = calibration.current_prompt()
     elif calibration.is_calibrated:
         calibration_text = "Calibration: complete (r reset)"

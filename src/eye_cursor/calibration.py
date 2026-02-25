@@ -6,10 +6,59 @@ import numpy as np
 
 CALIBRATION_STEPS = (
     ("top_left", "TOP-LEFT"),
+    ("top_mid_left", "TOP-MID-LEFT"),
+    ("top_center", "TOP-CENTER"),
+    ("top_mid_right", "TOP-MID-RIGHT"),
     ("top_right", "TOP-RIGHT"),
+    ("upper_left", "UPPER-LEFT"),
+    ("upper_mid_left", "UPPER-MID-LEFT"),
+    ("upper_center", "UPPER-CENTER"),
+    ("upper_mid_right", "UPPER-MID-RIGHT"),
+    ("upper_right", "UPPER-RIGHT"),
+    ("center_left", "CENTER-LEFT"),
+    ("center_mid_left", "CENTER-MID-LEFT"),
+    ("center", "CENTER"),
+    ("center_mid_right", "CENTER-MID-RIGHT"),
+    ("center_right", "CENTER-RIGHT"),
+    ("lower_left", "LOWER-LEFT"),
+    ("lower_mid_left", "LOWER-MID-LEFT"),
+    ("lower_center", "LOWER-CENTER"),
+    ("lower_mid_right", "LOWER-MID-RIGHT"),
+    ("lower_right", "LOWER-RIGHT"),
     ("bottom_left", "BOTTOM-LEFT"),
+    ("bottom_mid_left", "BOTTOM-MID-LEFT"),
+    ("bottom_center", "BOTTOM-CENTER"),
+    ("bottom_mid_right", "BOTTOM-MID-RIGHT"),
     ("bottom_right", "BOTTOM-RIGHT"),
 )
+
+CALIBRATION_TARGETS = {
+    "top_left": (0.1, 0.1),
+    "top_mid_left": (0.3, 0.1),
+    "top_center": (0.5, 0.1),
+    "top_mid_right": (0.7, 0.1),
+    "top_right": (0.9, 0.1),
+    "upper_left": (0.1, 0.3),
+    "upper_mid_left": (0.3, 0.3),
+    "upper_center": (0.5, 0.3),
+    "upper_mid_right": (0.7, 0.3),
+    "upper_right": (0.9, 0.3),
+    "center_left": (0.1, 0.5),
+    "center_mid_left": (0.3, 0.5),
+    "center": (0.5, 0.5),
+    "center_mid_right": (0.7, 0.5),
+    "center_right": (0.9, 0.5),
+    "lower_left": (0.1, 0.7),
+    "lower_mid_left": (0.3, 0.7),
+    "lower_center": (0.5, 0.7),
+    "lower_mid_right": (0.7, 0.7),
+    "lower_right": (0.9, 0.7),
+    "bottom_left": (0.1, 0.9),
+    "bottom_mid_left": (0.3, 0.9),
+    "bottom_center": (0.5, 0.9),
+    "bottom_mid_right": (0.7, 0.9),
+    "bottom_right": (0.9, 0.9),
+}
 
 
 @dataclass(frozen=True)
@@ -67,6 +116,13 @@ class CalibrationSession:
         _, step_label = CALIBRATION_STEPS[clamped_index]
         return f"Calibration {clamped_index + 1}/{len(CALIBRATION_STEPS)}: look {step_label} and press SPACE"
 
+    def current_target(self) -> tuple[float, float] | None:
+        if not self._active:
+            return None
+        clamped_index = int(np.clip(self._index, 0, len(CALIBRATION_STEPS) - 1))
+        step_id, _ = CALIBRATION_STEPS[clamped_index]
+        return CALIBRATION_TARGETS.get(step_id)
+
     def capture(self, sample: tuple[float, float] | None) -> str:
         if not self._active:
             return "Calibration is not active"
@@ -97,15 +153,12 @@ class CalibrationSession:
         if not required_keys.issubset(samples):
             return None
 
-        top_left = samples["top_left"]
-        top_right = samples["top_right"]
-        bottom_left = samples["bottom_left"]
-        bottom_right = samples["bottom_right"]
-
-        left = (top_left[0] + bottom_left[0]) * 0.5
-        right = (top_right[0] + bottom_right[0]) * 0.5
-        top = (top_left[1] + top_right[1]) * 0.5
-        bottom = (bottom_left[1] + bottom_right[1]) * 0.5
+        x_values = [point[0] for point in samples.values()]
+        y_values = [point[1] for point in samples.values()]
+        left = min(x_values)
+        right = max(x_values)
+        top = min(y_values)
+        bottom = max(y_values)
 
         if right < left:
             left, right = right, left
