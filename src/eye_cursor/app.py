@@ -5,7 +5,7 @@ import argparse
 import cv2
 import numpy as np
 
-from air_cursor.macos_mouse import MacOSMouseController
+from hand_cursor.macos_mouse import MacOSMouseController
 
 from .calibration import CalibrationSession
 from .config import EyeCursorConfig
